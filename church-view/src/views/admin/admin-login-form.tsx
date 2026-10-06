@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
-import { authRequest } from "../lib/church-api";
+import { authRequest } from "../../../lib/church-api";
 
 type AuthStep = "register" | "verify" | "password" | "login";
 type RegistrationResult = { requestId: string; destination?: string };

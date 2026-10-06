@@ -1,0 +1,37 @@
+import Link from "next/link";
+import { ArrowRight, CalendarPlus, HandHeart, Megaphone, Mic2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+const actions: { label: string; description: string; href: string; icon: LucideIcon }[] = [
+  { label: "Add Sermon", description: "Share a new message", href: "/admin/sermons", icon: Mic2 },
+  { label: "Create Event", description: "Add to the church calendar", href: "/admin/events", icon: CalendarPlus },
+  { label: "Post Announcement", description: "Send a church update", href: "/admin/announcements", icon: Megaphone },
+  { label: "View Prayer Requests", description: "Support the prayer team", href: "/admin/prayer-requests", icon: HandHeart },
+];
+
+export function QuickActionsView() {
+  return <section aria-labelledby="quick-actions-title">
+    <div className="mb-4 flex items-end justify-between gap-4">
+      <div>
+        <h2 className="text-lg font-semibold text-slate-900" id="quick-actions-title">Quick actions</h2>
+        <p className="mt-1 text-sm text-slate-500">Common tasks, ready when you are.</p>
+      </div>
+    </div>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {actions.map(({ label, description, href, icon: Icon }) => <Link
+        className="group flex min-h-28 items-center gap-4 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-indigo-100"
+        href={href}
+        key={href}
+      >
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-indigo-50 text-indigo-700 transition group-hover:bg-indigo-100">
+          <Icon aria-hidden="true" className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-slate-900">{label}</span>
+          <span className="mt-1 block text-xs leading-5 text-slate-500">{description}</span>
+        </span>
+        <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-indigo-600" />
+      </Link>)}
+    </div>
+  </section>;
+}

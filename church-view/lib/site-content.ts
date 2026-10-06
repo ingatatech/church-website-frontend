@@ -40,7 +40,7 @@ export const sitePages: Record<string, SitePage> = {
 };
 
 export const adminSections = [
-  ["Overview", "/admin"], ["Sermons", "/admin/sermons"], ["Events", "/admin/events"],
+  ["Dashboard", "/admin/dashboard"], ["Sermons", "/admin/sermons"], ["Events", "/admin/events"],
   ["Ministries", "/admin/ministries"], ["Announcements", "/admin/announcements"],
   ["Resources", "/admin/resources"], ["Leadership", "/admin/leadership"],
   ["Media library", "/admin/media"], ["Inquiries", "/admin/inquiries"],
