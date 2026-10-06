@@ -16,6 +16,19 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Backend API configuration
+
+The frontend reads its backend connection from `.env.local`. Copy `.env.example` to `.env.local`, then set the protocol, host, port, and API prefix for your backend:
+
+```env
+NEXT_PUBLIC_API_PROTOCOL=http
+NEXT_PUBLIC_API_HOST=localhost
+NEXT_PUBLIC_API_PORT=5004
+NEXT_PUBLIC_API_PREFIX=api
+```
+
+The API URL is assembled as `protocol://host:port/prefix` and is shared by public content requests, account registration, email verification, password setup, login, and session checks. Restart the Next.js development server after changing these values.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

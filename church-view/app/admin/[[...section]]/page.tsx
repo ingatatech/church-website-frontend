@@ -12,7 +12,16 @@ function PageHeader({ title, description, action }: { title: string; description
 
 export default async function AdminPage({ params }: { params: Promise<{ section?: string[] }> }) {
   const section = (await params).section ?? [];
-  if (section[0] === "login") return <main className="mx-auto max-w-lg py-8"><div className="surface-card p-6 sm:p-9"><p className="eyebrow text-clay">ADMINISTRATOR ACCESS</p><h1 className="mt-3 text-3xl font-semibold">Welcome back</h1><p className="mt-2 text-sm text-muted">Sign in will be enabled when the authentication service is connected.</p><AdminLoginForm /><p className="mt-4 text-xs leading-5 text-muted" role="note">This is a frontend sign-in screen. Authentication is not configured yet.</p></div></main>;
+  const authPages: Record<string, { step: "register" | "verify" | "password" | "login"; title: string; description: string }> = {
+    signup: { step: "register", title: "Create your account", description: "Enter your details to begin account setup." },
+    "verify-email": { step: "verify", title: "Confirm your email", description: "Enter the verification code we sent to your inbox." },
+    "setup-password": { step: "password", title: "Set your password", description: "Choose a password to finish setting up your account." },
+    login: { step: "login", title: "Welcome back", description: "Sign in to continue to your account." },
+  };
+  const authPage = section.length === 1 ? authPages[section[0]] : undefined;
+  if (authPage) {
+    return <main className="mx-auto max-w-lg py-8 sm:py-12"><div className="surface-card overflow-hidden"><div className="h-1.5 bg-secondary" /><div className="p-6 sm:p-9"><p className="eyebrow text-clay">INGATA CHURCH · ADMIN WORKSPACE</p><h1 className="mt-3 text-3xl font-semibold tracking-tight">{authPage.title}</h1><p className="mt-2 text-sm leading-6 text-muted">{authPage.description}</p><div className="mt-7"><AdminLoginForm initialStep={authPage.step} /></div><p className="mt-6 border-t border-border pt-4 text-xs leading-5 text-muted">Account sign-in is connected. Management permissions are controlled separately by the church administrator.</p></div></div></main>;
+  }
   if (section.length > 1) notFound();
   if (section.length === 0) return <main><PageHeader title="Overview" description="A quick look at the Ingata Church website workspace." /><div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[["Content sections", "9", "Manage church website information"], ["Published items", "—", "Connect content API to load totals"], ["New inquiries", "—", "Contact submissions"], ["Prayer requests", "—", "Shared with the prayer team"]].map(([label, value, hint]) => <article className="surface-card p-5" key={label}><p className="text-sm text-muted">{label}</p><p className="mt-4 text-3xl font-semibold">{value}</p><p className="mt-2 text-xs leading-5 text-muted">{hint}</p></article>)}</div><section className="surface-card mt-6 p-5 sm:p-7"><h2 className="text-lg font-semibold">Quick access</h2><div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{Object.entries(adminContent).slice(0, 6).map(([key, item]) => <Link className="border border-border bg-background p-4 text-sm font-semibold hover:border-primary" href={`/admin/${key}`} key={key}>{item.title}<span className="float-right" aria-hidden="true">↗</span></Link>)}</div><p className="mt-5 text-xs leading-5 text-muted">Dashboard values and content rows are placeholders until connected to the backend API.</p></section></main>;
   const item = adminContent[section[0]];

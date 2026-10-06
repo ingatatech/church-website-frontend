@@ -1,4 +1,55 @@
-const apiBase = (process.env.CHURCH_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5004/api").replace(/\/$/, "");
+const protocol = process.env.NEXT_PUBLIC_API_PROTOCOL ?? "http";
+const host = process.env.NEXT_PUBLIC_API_HOST ?? "localhost";
+const port = process.env.NEXT_PUBLIC_API_PORT?.trim();
+const apiPrefix = `/${(process.env.NEXT_PUBLIC_API_PREFIX ?? "api").replace(/^\/+|\/+$/g, "")}`;
+const apiBase = `${protocol}://${host}${port ? `:${port}` : ""}${apiPrefix}`.replace(/\/$/, "");
+
+type ApiEnvelope<T> = {
+  success?: boolean;
+  message?: string;
+  data?: T;
+  error?: string;
+  statusCode?: number;
+};
+
+export async function authRequest<T>(path: string, body?: unknown): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${apiBase}${path}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body ?? {}),
+    });
+  } catch {
+    throw new Error("We couldn’t reach the sign-in service. Check your connection and try again.");
+  }
+
+  const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
+  if (!response.ok || payload?.success === false) {
+    throw new Error(payload?.error ?? payload?.message ?? "That request could not be completed. Please try again.");
+  }
+  return payload?.data as T;
+}
+
+export async function authGet<T>(path: string): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${apiBase}${path}`, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error("We couldn’t reach the sign-in service. Check your connection and try again.");
+  }
+
+  const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
+  if (!response.ok || payload?.success === false) {
+    throw new Error(payload?.error ?? payload?.message ?? "That request could not be completed. Please try again.");
+  }
+  return payload?.data as T;
+}
 
 export async function getPublicData<T>(path: string): Promise<T | null> {
   try {
