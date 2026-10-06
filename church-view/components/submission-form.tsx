@@ -1,50 +1,62 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
+import { useForm, type FieldPath, type SubmitHandler } from "react-hook-form";
+import { submissionSchema, type SubmissionValues } from "../lib/form-schema";
 
 type SubmissionType = "contact" | "visitor" | "prayer";
 
 export function SubmissionForm({ type = "contact", compact = false, initialMessage = "" }: { type?: SubmissionType; compact?: boolean; initialMessage?: string }) {
-  const [status, setStatus] = useState<string>("");
-  const [sending, setSending] = useState(false);
+  const [status, setStatus] = useState("");
+  const { register, handleSubmit, setError, setFocus, clearErrors, reset, formState: { errors, isSubmitting } } = useForm<SubmissionValues>({
+    mode: "onBlur",
+    defaultValues: { name: "", email: "", phone: "", message: initialMessage },
+  });
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSending(true);
+  const submit: SubmitHandler<SubmissionValues> = async (values) => {
     setStatus("");
-    const formElement = event.currentTarget;
-    const form = new FormData(formElement);
-    const apiBase = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5004/api").replace(/\/$/, "");
-    try {
-      const response = await fetch(`${apiBase}/submissions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          name: form.get("name"),
-          email: form.get("email"),
-          phone: form.get("phone") || undefined,
-          message: form.get("message"),
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message ?? "We couldn’t send your message. Please try again.");
-      formElement.reset();
-      setStatus(result.message ?? "Thanks. Your message has been received.");
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "We couldn’t send your message. Please try again.");
-    } finally {
-      setSending(false);
+    const result = submissionSchema.safeParse(values);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as FieldPath<SubmissionValues>;
+        setError(field, { type: "validate", message: issue.message });
+      }
+      const firstField = result.error.issues[0]?.path[0] as FieldPath<SubmissionValues> | undefined;
+      if (firstField) setFocus(firstField);
+      return;
     }
-  }
 
-  const fieldClass = "w-full border border-ink/20 bg-paper px-4 py-3 text-sm outline-none transition placeholder:text-muted/70 focus:border-forest focus:ring-1 focus:ring-forest";
-  return <form className={compact ? "space-y-4" : "space-y-5"} onSubmit={submit}>
-    <div className="grid gap-4 sm:grid-cols-2"><label className="block text-xs font-semibold">Your name<input className={`${fieldClass} mt-2`} name="name" autoComplete="name" maxLength={140} required /></label><label className="block text-xs font-semibold">Email address<input className={`${fieldClass} mt-2`} name="email" type="email" autoComplete="email" maxLength={254} required /></label></div>
-    <label className="block text-xs font-semibold">Phone <span className="font-normal text-muted">(optional)</span><input className={`${fieldClass} mt-2`} name="phone" type="tel" autoComplete="tel" maxLength={40} /></label>
-    <label className="block text-xs font-semibold">{type === "prayer" ? "Prayer request" : type === "visitor" ? "Anything you’d like us to know before you visit?" : "How can we help?"}<textarea className={`${fieldClass} mt-2 min-h-32 resize-y`} name="message" minLength={5} maxLength={5000} defaultValue={initialMessage} required /></label>
-    {type === "prayer" && <p className="text-xs leading-5 text-muted">Prayer requests are personal. Share only what you’re comfortable sending to the church team.</p>}
-    <button className="bg-forest px-5 py-3.5 text-sm font-bold text-paper transition hover:bg-ink disabled:cursor-wait disabled:opacity-60" disabled={sending} type="submit">{sending ? "Sending…" : "Send message"} <span className="ml-4">↗</span></button>
-    <p className="min-h-5 text-sm text-muted" aria-live="polite" role="status">{status}</p>
+    clearErrors();
+    await new Promise((resolve) => window.setTimeout(resolve, 250));
+    setStatus("Thank you. Your message is ready for the church team once the website is connected.");
+    reset({ name: "", email: "", phone: "", message: "" });
+  };
+
+  const messageLabel = type === "prayer" ? "Prayer request" : type === "visitor" ? "Anything you’d like us to know before you visit?" : "How can we help?";
+  const fieldClass = (field: FieldPath<SubmissionValues>) => `form-field mt-2 ${errors[field] ? "border-error" : ""}`;
+  const fieldDescription = (field: FieldPath<SubmissionValues>) => errors[field] ? `${type}-${field}-error` : undefined;
+
+  return <form className={compact ? "space-y-4" : "space-y-5"} noValidate onSubmit={handleSubmit(submit)}>
+    <div className="grid gap-4 sm:grid-cols-2">
+      <label className="block text-sm font-semibold" htmlFor={`${type}-name`}>Your name
+        <input {...register("name")} aria-describedby={fieldDescription("name")} aria-invalid={Boolean(errors.name)} aria-required="true" autoComplete="name" className={fieldClass("name")} id={`${type}-name`} maxLength={140} />
+        {errors.name?.message && <span className="mt-1 block text-sm text-error" id={`${type}-name-error`} role="alert">{errors.name.message}</span>}
+      </label>
+      <label className="block text-sm font-semibold" htmlFor={`${type}-email`}>Email address
+        <input {...register("email")} aria-describedby={fieldDescription("email")} aria-invalid={Boolean(errors.email)} aria-required="true" autoComplete="email" className={fieldClass("email")} id={`${type}-email`} maxLength={254} type="email" />
+        {errors.email?.message && <span className="mt-1 block text-sm text-error" id={`${type}-email-error`} role="alert">{errors.email.message}</span>}
+      </label>
+    </div>
+    <label className="block text-sm font-semibold" htmlFor={`${type}-phone`}>Phone <span className="font-normal text-muted">(optional)</span>
+      <input {...register("phone")} aria-describedby={fieldDescription("phone")} aria-invalid={Boolean(errors.phone)} autoComplete="tel" className={fieldClass("phone")} id={`${type}-phone`} maxLength={40} type="tel" />
+      {errors.phone?.message && <span className="mt-1 block text-sm text-error" id={`${type}-phone-error`} role="alert">{errors.phone.message}</span>}
+    </label>
+    <label className="block text-sm font-semibold" htmlFor={`${type}-message`}>{messageLabel}
+      <textarea {...register("message")} aria-describedby={fieldDescription("message")} aria-invalid={Boolean(errors.message)} aria-required="true" className={`${fieldClass("message")} min-h-32 resize-y`} id={`${type}-message`} maxLength={5000} />
+      {errors.message?.message && <span className="mt-1 block text-sm text-error" id={`${type}-message-error`} role="alert">{errors.message.message}</span>}
+    </label>
+    {type === "prayer" && <p className="text-xs leading-5 text-muted">Prayer requests are personal. Share only what you are comfortable sending to the church team.</p>}
+    <button className="button button-primary disabled:cursor-wait disabled:opacity-60" disabled={isSubmitting} type="submit">{isSubmitting ? "Preparing…" : type === "prayer" ? "Share request" : "Send message"}<span aria-hidden="true">↗</span></button>
+    <p className="min-h-10 text-sm text-muted" aria-live="polite" role="status">{status}</p>
   </form>;
 }

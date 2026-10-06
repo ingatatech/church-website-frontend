@@ -1,20 +1,15 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import "./globals.css";
-import { SiteHeader } from "../components/site-header";
-import { SiteFooter } from "../components/site-footer";
+import { SiteChrome } from "../components/site-chrome";
 
 export const metadata: Metadata = {
-  title: "Ingata Church | A Place to Belong",
-  description:
-    "A community of faith, hope and open doors in Kigali. Join us for worship, find your people, and grow in faith together.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://ingata.church"),
+  title: { default: "Ingata Church | A Place to Belong", template: "%s | Ingata Church" },
+  description: "A community of faith, hope and open doors in Kigali. Join us for worship, find your people, and grow in faith together.",
+  openGraph: { type: "website", siteName: "Ingata Church", locale: "en_RW" },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html lang="en">
-      <body className="font-sans antialiased">
-        <div id="top"><SiteHeader />{children}<SiteFooter /></div>
-      </body>
-    </html>
-  );
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return <html lang="en"><body className="antialiased"><SiteChrome>{children}</SiteChrome></body></html>;
 }
