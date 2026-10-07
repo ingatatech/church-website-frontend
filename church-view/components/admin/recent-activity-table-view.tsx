@@ -1,5 +1,11 @@
 type ActivityCategory = "Sermon" | "Event" | "Announcement";
-type ActivityStatus = "Published" | "Draft" | "Scheduled";
+type ActivityStatus =
+  | "Published"
+  | "Draft"
+  | "Scheduled"
+  | "Unpublished"
+  | "Expired"
+  | "Archived";
 
 type ActivityItem = {
   id: string;
@@ -16,6 +22,9 @@ const statusStyles: Record<ActivityStatus, string> = {
   Published: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
   Draft: "bg-amber-50 text-amber-800 ring-amber-600/20",
   Scheduled: "bg-blue-50 text-blue-700 ring-blue-600/15",
+  Unpublished: "bg-orange-50 text-orange-800 ring-orange-600/20",
+  Expired: "bg-slate-100 text-slate-700 ring-slate-600/15",
+  Archived: "bg-slate-100 text-slate-700 ring-slate-600/15",
 };
 
 function StatusBadge({ status }: { status: ActivityStatus }) {

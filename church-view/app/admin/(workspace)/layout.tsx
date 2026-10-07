@@ -63,7 +63,7 @@ export default function AdminWorkspaceLayout({ children }: { children: ReactNode
         </span>
         <div className="mt-6 flex items-center justify-center gap-2">
           <LoaderCircle aria-hidden="true" className="size-4 animate-spin text-indigo-600" />
-          <p className="text-sm font-semibold text-slate-900">{authStatus === "redirecting" ? "Opening sign in" : "Preparing your workspace"}</p>
+          <p className="text-sm font-semibold text-slate-900">{authStatus === "redirecting" ? "WELCOME TO ADMIN PAGE" : "FAITHFULNESS AND DEDICATION IS IMPORTANT"}</p>
         </div>
         <p className="mt-2 text-sm leading-6 text-slate-500">{authStatus === "redirecting" ? "Taking you to the secure sign-in page." : "One moment while we get your dashboard ready."}</p>
         <div aria-hidden="true" className="mt-7 space-y-2.5">

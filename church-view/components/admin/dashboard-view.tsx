@@ -16,6 +16,7 @@ type DatedRecord = {
   createdAt?: string;
   updatedAt?: string;
   publishedAt?: string | null;
+  details?: { status?: string };
 };
 
 type DashboardAnnouncementList = { items: DatedRecord[] };
@@ -123,11 +124,19 @@ function toActivityItems(data: DashboardData): RecentActivityItem[] {
     if (!rawDate) continue;
     const formatted = formatActivityDate(rawDate);
     if (!formatted.dateTime) continue;
+    const announcementStatus = announcement.details?.status;
+    const status =
+      announcementStatus === "SCHEDULED" ? "Scheduled"
+        : announcementStatus === "UNPUBLISHED" ? "Unpublished"
+          : announcementStatus === "EXPIRED" ? "Expired"
+            : announcementStatus === "ARCHIVED" ? "Archived"
+              : announcementStatus === "DRAFT" || announcement.status === "draft" ? "Draft"
+                : "Published";
     items.push({
       id: `announcement-${announcement.id}`,
       title: announcement.title || "Untitled announcement",
       category: "Announcement",
-      status: announcement.status === "draft" ? "Draft" : "Published",
+      status,
       ...formatted,
     });
   }
@@ -139,15 +148,17 @@ function toActivityItems(data: DashboardData): RecentActivityItem[] {
 
 export function DashboardView() {
   const [data, setData] = useState(initialData);
+  const [currentTime, setCurrentTime] = useState(0);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => setCurrentTime(new Date().getTime()), 0);
     let cancelled = false;
 
     async function loadDashboard() {
       const [sermonsResult, eventsResult, announcementsResult, prayersResult] = await Promise.allSettled([
         authGet<DatedRecord[]>("/sermons"),
         authGet<DatedRecord[]>("/events"),
-        authGet<DashboardAnnouncementList>("/content/announcements?limit=100"),
+        authGet<DashboardAnnouncementList>("/admin/announcements"),
         authGet<DatedRecord[]>("/inquiries/prayer"),
       ]);
 
@@ -171,13 +182,16 @@ export function DashboardView() {
     }
 
     void loadDashboard();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   const recentItems = useMemo(() => toActivityItems(data), [data]);
-  const now = Date.now();
+  const now = currentTime;
   const currentPeriodStart = now - 30 * 24 * 60 * 60 * 1000;
-  const today = getKigaliDateKey(new Date());
+  const today = currentTime ? getKigaliDateKey(new Date(currentTime)) : "";
   const upcomingEvents = data.events.filter((event) => Boolean(event.date) && event.date! >= today);
   const recentPrayerRequests = data.prayerRequests.filter((request) => {
     const createdAt = request.createdAt ? new Date(request.createdAt).getTime() : 0;

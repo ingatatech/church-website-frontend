@@ -13,13 +13,23 @@ type ApiEnvelope<T> = {
 };
 
 export async function authRequest<T>(path: string, body?: unknown): Promise<T> {
+  return authMutation<T>(path, "POST", body ?? {});
+}
+
+export async function authMutation<T>(
+  path: string,
+  method: "POST" | "PATCH" | "DELETE",
+  body?: unknown,
+): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${apiBase}${path}`, {
-      method: "POST",
+      method,
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body ?? {}),
+      ...(body === undefined ? {} : {
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
     });
   } catch {
     throw new Error("We couldn’t reach the sign-in service. Check your connection and try again.");
@@ -28,6 +38,25 @@ export async function authRequest<T>(path: string, body?: unknown): Promise<T> {
   const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
   if (!response.ok || payload?.success === false) {
     throw new Error(payload?.error ?? payload?.message ?? "That request could not be completed. Please try again.");
+  }
+  return payload?.data as T;
+}
+
+export async function authUpload<T>(path: string, body: FormData): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${apiBase}${path}`, {
+      method: "POST",
+      credentials: "include",
+      body,
+    });
+  } catch {
+    throw new Error("We couldn’t reach the upload service. Check your connection and try again.");
+  }
+
+  const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null;
+  if (!response.ok || payload?.success === false) {
+    throw new Error(payload?.error ?? payload?.message ?? "That upload could not be completed. Please try again.");
   }
   return payload?.data as T;
 }

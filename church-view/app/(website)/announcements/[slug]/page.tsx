@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AnnouncementDetailPage } from "@/components/public-pages/announcement-detail-page";
+import { getPublicData, type PublicContent } from "@/lib/api/church-api";
 
 type AnnouncementParams = { slug: string };
 
@@ -9,10 +10,20 @@ function titleFromSlug(slug: string) {
 
 export async function generateMetadata({ params }: { params: Promise<AnnouncementParams> }): Promise<Metadata> {
   const { slug } = await params;
+  const item = await getPublicData<PublicContent>(`/content/announcements/${encodeURIComponent(slug)}`);
+  const title = item?.title ?? titleFromSlug(slug);
+  const image = typeof item?.details.imageUrl === "string" ? item.details.imageUrl : undefined;
   return {
-    title: titleFromSlug(slug),
-    description: "Church update from our community in Kigali.",
+    title,
+    description: item?.description ?? "Church update from our community in Kigali.",
     alternates: { canonical: `/announcements/${slug}` },
+    openGraph: {
+      title,
+      description: item?.description ?? "Church update from our community in Kigali.",
+      type: "article",
+      url: `/announcements/${slug}`,
+      ...(image ? { images: [{ url: image, alt: title }] } : {}),
+    },
   };
 }
 

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getPublicData, type ChurchEvent, type Sermon } from "@/lib/api/church-api";
-import { mockMinistries } from "@/lib/content/church-defaults";
+import { getPublicData, type ChurchEvent, type PublicContent, type Sermon } from "@/lib/api/church-api";
+import { mockMinistries, mockSocialLinks } from "@/lib/content/church-defaults";
 
 export const metadata: Metadata = {
   title: "Welcome to Our Church",
@@ -11,18 +11,30 @@ export const metadata: Metadata = {
 };
 
 export default async function HomeView() {
-  const [events, sermons] = await Promise.all([
+  const [events, sermons, announcements, serviceContent] = await Promise.all([
     getPublicData<ChurchEvent[]>("/events"),
     getPublicData<Sermon[]>("/sermons"),
+    getPublicData<{ items: PublicContent[] }>("/content/announcements?limit=3"),
+    getPublicData<{ items: PublicContent[] }>("/content/services?limit=2"),
   ]);
+  const serviceSchedule = serviceContent?.items?.length
+    ? serviceContent.items.map((service) => ({
+        title: service.title,
+        time: [service.details.day, service.details.time].filter((value): value is string => typeof value === "string" && value.length > 0).join(" · ") || "Time to be confirmed",
+        description: service.description || "Contact us for details",
+      }))
+    : [
+        { title: "Service Schedule", time: "Times to be confirmed", description: "Contact us for current details" },
+        { title: "Gather With Us", time: "Everyone is welcome", description: "Ask about worship and gatherings" },
+      ];
 
   return (
     <main className="flex min-h-screen flex-col bg-stone-50 text-stone-900 selection:bg-amber-200 selection:text-stone-900">
 
       {/* HERO SECTION */}
-      <section className="relative flex min-h-[85vh] items-center justify-center overflow-hidden bg-stone-900">
+      <section className="relative flex min-h-[75vh] items-center justify-center overflow-hidden bg-stone-900 sm:min-h-[82vh]">
         <Image
-          alt="Church community gathered together"
+          alt=""
           className="object-cover opacity-50 mix-blend-overlay"
           fill
           priority
@@ -41,7 +53,7 @@ export default async function HomeView() {
           </p>
           <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row">
             <Link className="rounded-sm bg-amber-700 px-8 py-4 text-sm font-bold tracking-wide text-white uppercase shadow-lg transition-colors hover:bg-amber-600" href="/plan-your-visit">
-              Plan Your Visi
+              Plan Your Visit
             </Link>
             <Link className="rounded-sm border-2 border-white px-8 py-4 text-sm font-bold tracking-wide text-white uppercase transition-colors hover:bg-white hover:text-stone-900" href="/sermons">
               Watch Sermons
@@ -54,16 +66,11 @@ export default async function HomeView() {
       <section className="relative z-20 -mt-16 px-4 sm:px-6 lg:px-12">
         <div className="mx-auto max-w-6xl rounded-sm border-t-4 border-amber-700 bg-white shadow-xl">
           <div className="grid divide-y divide-stone-100 md:grid-cols-3 md:divide-x md:divide-y-0">
-            <div className="p-8 text-center md:text-left">
-              <h3 className="font-serif text-xl font-bold text-stone-900">Sunday Worship</h3>
-              <p className="mt-2 font-medium text-amber-700">Sunday • 9:00 AM</p>
-              <p className="mt-1 text-sm text-stone-500">Main Worship Service</p>
-            </div>
-            <div className="p-8 text-center md:text-left">
-              <h3 className="font-serif text-xl font-bold text-stone-900">Bible Study</h3>
-              <p className="mt-2 font-medium text-amber-700">Wednesday • 6:00 PM</p>
-              <p className="mt-1 text-sm text-stone-500">Midweek Fellowship</p>
-            </div>
+            {serviceSchedule.map((service) => <div className="p-8 text-center md:text-left" key={service.title}>
+              <h3 className="font-serif text-xl font-bold text-stone-900">{service.title}</h3>
+              <p className="mt-2 font-medium text-amber-700">{service.time}</p>
+              <p className="mt-1 text-sm text-stone-500">{service.description}</p>
+            </div>)}
             <div className="flex flex-col items-center justify-center p-8 bg-stone-50 transition-colors hover:bg-stone-100">
               <Link className="group inline-flex items-center text-sm font-bold tracking-wide text-stone-900 uppercase" href="/services">
                 View All Services
@@ -103,15 +110,13 @@ export default async function HomeView() {
           </div>
 
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {mockMinistries.map((ministry) => (
-              <Link className="group relative block h-64 overflow-hidden rounded-sm bg-stone-100" href={`/ministries/${ministry.slug}`} key={ministry.slug}>
-                {/* Fallback styling for ministry cards without specific images */}
-                <div className="absolute inset-0 bg-stone-900/5 transition-colors group-hover:bg-stone-900/10" />
-                <div className="absolute inset-0 p-8 flex flex-col justify-end bg-gradient-to-t from-stone-900/80 to-transparent transition-opacity group-hover:from-stone-900/90">
-                  <h3 className="font-serif text-2xl font-medium text-white">{ministry.name}</h3>
-                  <span className="mt-2 inline-flex items-center text-sm font-bold tracking-wide text-amber-500 uppercase opacity-0 transition-all group-hover:opacity-100">
-                    Learn More &rarr;
-                  </span>
+            {mockMinistries.slice(0, 6).map((ministry, index) => (
+              <Link className="group flex min-h-56 flex-col justify-between border border-stone-200 bg-stone-50 p-7 transition-colors hover:border-amber-700 hover:bg-white" href={`/ministries/${ministry.slug}`} key={ministry.slug}>
+                <span className="flex size-12 items-center justify-center border border-amber-700/40 font-serif text-xl text-amber-800">0{index + 1}</span>
+                <div>
+                  <h3 className="font-serif text-2xl font-medium text-stone-900">{ministry.name}</h3>
+                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-stone-600">{ministry.description}</p>
+                  <span className="mt-5 inline-flex items-center text-xs font-bold tracking-wide text-amber-800 uppercase group-hover:underline">Explore ministry <span className="ml-2" aria-hidden="true">→</span></span>
                 </div>
               </Link>
             ))}
@@ -134,14 +139,14 @@ export default async function HomeView() {
                 <Link className="group flex flex-col gap-4 border-b border-stone-200 py-6 transition-colors hover:bg-white sm:flex-row sm:items-center sm:justify-between sm:px-4" href={`/events/${event.id}`} key={event.id}>
                   <div>
                     <h3 className="font-serif text-xl font-bold text-stone-900 group-hover:text-amber-700">{event.name}</h3>
-                    <p className="mt-2 text-sm text-stone-500">{event.date} • {event.time}</p>
+                    <p className="mt-2 text-sm text-stone-500">{event.date} · {event.time}{event.location ? ` · ${event.location}` : ""}</p>
                   </div>
                   <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-900 transition-colors group-hover:bg-amber-700 group-hover:text-white">
                     &rarr;
                   </span>
                 </Link>
               )) : (
-                <p className="py-8 text-stone-500">Confirmed events will appear here.</p>
+                <p className="py-8 text-stone-500">Upcoming events will appear here when they are published.</p>
               )}
             </div>
           </div>
@@ -150,13 +155,16 @@ export default async function HomeView() {
           <div className="lg:col-span-5">
             <div className="flex h-full flex-col justify-center rounded-sm bg-stone-900 p-10 text-center text-white shadow-xl">
               <span className="text-xs font-bold tracking-widest text-amber-500 uppercase">Church News</span>
-              <h2 className="mt-4 font-serif text-3xl font-medium">Stay in the Loop</h2>
+              <h2 className="mt-4 font-serif text-3xl font-medium">Latest Announcements</h2>
               <div className="mx-auto mt-6 h-px w-16 bg-white/20" />
-              <p className="mt-6 text-stone-300">
-                Church announcements, community news and ministry updates are updated weekly. Read our latest notices to stay connected.
-              </p>
+              {announcements?.items?.length ? <ul className="mt-6 divide-y divide-white/15 text-left">
+                {announcements.items.slice(0, 3).map((item) => <li className="py-4" key={item.id}>
+                  <Link className="font-serif text-lg text-white hover:text-amber-300" href={`/announcements/${item.slug}`}>{item.title}</Link>
+                  {item.description && <p className="mt-1 line-clamp-2 text-sm leading-6 text-stone-300">{item.description}</p>}
+                </li>)}
+              </ul> : <p className="mt-6 text-stone-300">Church news and ministry updates will appear here when they are published.</p>}
               <Link className="mx-auto mt-8 inline-block rounded-sm bg-white px-8 py-3 text-sm font-bold tracking-wide text-stone-900 uppercase transition-colors hover:bg-stone-200" href="/announcements">
-                Read Announcements
+                All Announcements
               </Link>
             </div>
           </div>
@@ -176,14 +184,14 @@ export default async function HomeView() {
           {sermons?.length ? (
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {sermons.slice(0, 3).map((sermon) => (
-                <article className="group flex flex-col rounded-sm bg-stone-800 p-8 transition-colors hover:bg-stone-800/80" key={sermon.id}>
-                  <p className="text-xs font-bold tracking-widest text-amber-500 uppercase">{sermon.category} • {sermon.date}</p>
+                <article className="group relative flex flex-col rounded-sm bg-stone-800 p-8 transition-colors hover:bg-stone-800/80" key={sermon.id}>
+                  <p className="text-xs font-bold tracking-widest text-amber-500 uppercase">{sermon.category} · {sermon.date}</p>
                   <h3 className="mt-4 font-serif text-2xl font-medium text-white">
                     <Link className="before:absolute before:inset-0" href={`/sermons/${sermon.id}`}>
                       {sermon.title}
                     </Link>
                   </h3>
-                  <p className="mt-2 text-sm text-stone-400">{sermon.speaker}{sermon.scripture ? ` • ${sermon.scripture}` : ""}</p>
+                  <p className="mt-2 text-sm text-stone-400">{sermon.speaker}{sermon.scripture ? ` · ${sermon.scripture}` : ""}</p>
 
                   {sermon.audioUrl && (
                     <div className="relative z-10 mt-auto pt-8">
@@ -218,10 +226,10 @@ export default async function HomeView() {
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Link className="inline-flex items-center justify-center rounded-sm bg-amber-700 px-8 py-4 text-sm font-bold tracking-wide text-white uppercase transition-colors hover:bg-amber-600" href="/plan-your-visit">
-                Get Directions
+                Plan Your Visit
               </Link>
               <Link className="inline-flex items-center justify-center rounded-sm border-2 border-stone-900 px-8 py-4 text-sm font-bold tracking-wide text-stone-900 uppercase transition-colors hover:bg-stone-900 hover:text-white" href="/prayer-request">
-                Submit Prayer Reques
+                Share a Prayer Request
               </Link>
             </div>
           </div>
@@ -232,7 +240,24 @@ export default async function HomeView() {
               loading="lazy"
               src="https://maps.google.com/maps?q=Kigali%2C%20Rwanda&output=embed"
             />
+            <div className="absolute bottom-0 left-0 right-0 bg-white/95 px-5 py-3 text-sm text-stone-700">Kigali, Rwanda <span className="text-stone-400">·</span> Exact meeting location to be confirmed</div>
           </div>
+        </div>
+      </section>
+
+      {/* SOCIAL LINKS */}
+      <section className="border-t border-stone-200 bg-stone-50 px-6 py-14 sm:px-12 lg:px-24" aria-labelledby="social-heading">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold tracking-widest text-amber-800 uppercase">Stay connected</p>
+            <h2 className="mt-2 font-serif text-2xl text-stone-900" id="social-heading">Connect with our church</h2>
+          </div>
+          {mockSocialLinks.length ? <nav aria-label="Church social media" className="flex flex-wrap gap-3">
+            {mockSocialLinks.map((social) => <a className="border border-stone-300 px-4 py-3 text-sm font-semibold text-stone-800 hover:border-amber-700 hover:text-amber-800" href={social.href} key={social.label} rel="noreferrer" target="_blank">{social.label}</a>)}
+          </nav> : <div className="flex flex-col gap-3 sm:items-end">
+            <p className="text-sm text-stone-600">Social media links will be added when the church channels are confirmed.</p>
+            <Link className="text-sm font-bold text-amber-800 hover:underline" href="/contact">Contact the church <span aria-hidden="true">→</span></Link>
+          </div>}
         </div>
       </section>
     </main>
