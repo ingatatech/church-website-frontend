@@ -14,7 +14,6 @@ import {
   Phone,
   X,
   Compass,
-  Megaphone,
 } from "lucide-react";
 import { ChurchLogo } from "@/components/brand/church-logo";
 import { useChurchBrand } from "@/components/brand/church-brand-provider";
@@ -39,7 +38,7 @@ export type UrgentAnnouncementData = {
 export function HeaderView({
   phone,
   email,
-  location = "Kigali, Rwanda",
+  location = "",
   siteHeader,
   urgentAnnouncement,
 }: {
@@ -55,10 +54,12 @@ export function HeaderView({
   const configuredNavigation = headerSettings.navigation
     .filter((item) => item.visible)
     .sort((left, right) => left.order - right.order);
+    
   const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(true);
   const [scrolled, setScrolled] = useState(false);
+  
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const mobileNavigationRef = useRef<HTMLDivElement>(null);
@@ -89,6 +90,7 @@ export function HeaderView({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Mobile menu focus trap
   useEffect(() => {
     if (!mobileMenuOpen) return;
 
@@ -132,105 +134,121 @@ export function HeaderView({
   }
 
   const isHeroPage = pathname === "/";
-  const navTextColor = scrolled || !isHeroPage ? "text-stone-800" : "text-white/90";
-  const navHoverColor = scrolled || !isHeroPage ? "hover:text-primary" : "hover:text-secondary";
-  const navActiveColor = scrolled || !isHeroPage ? "text-primary font-bold" : "text-secondary font-bold";
+  const showAnnouncement = Boolean(activeAnnouncement && bannerVisible);
+  
+  // Modern & Minimalist Color Variables
+  const navTextColor = scrolled || !isHeroPage ? "text-stone-700" : "text-white/90";
+  const navHoverColor = scrolled || !isHeroPage ? "hover:text-primary" : "hover:text-white";
+  const navActiveColor = scrolled || !isHeroPage ? "text-primary font-bold" : "text-white font-bold";
 
   return (
     <header
-      className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${
+      className={`fixed top-0 left-0 z-50 w-full transition-all duration-500 ${
         scrolled
-          ? "bg-white/98 shadow-md backdrop-blur-md border-b border-stone-200/90"
+      ? `bg-white/95 shadow-[0_10px_30px_-20px_rgba(22,45,82,0.35)] backdrop-blur-md border-b border-stone-200/80 ${showAnnouncement ? "py-0" : "py-1"}`
           : isHeroPage
-            ? "bg-gradient-to-b from-stone-950/85 via-stone-950/45 to-transparent"
-            : "bg-white/98 shadow-sm backdrop-blur-md border-b border-stone-200/80"
+        ? `bg-gradient-to-b from-[#0b1833]/70 to-transparent ${showAnnouncement ? "py-0" : "py-3"}`
+        : `bg-white/95 shadow-[0_10px_30px_-20px_rgba(22,45,82,0.35)] border-b border-stone-200/80 ${showAnnouncement ? "py-0" : "py-1"}`
       }`}
     >
-      {/* ── 1. Top Section: Urgent Announcement from Database ── */}
+      {/* ── 1. Top Section: Announcement Banner ── */}
       {activeAnnouncement && bannerVisible && (
         <aside
           aria-label="Urgent church announcement"
-          className="relative z-20 flex min-h-10 items-center justify-between border-b border-amber-600/30 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 px-3.5 py-2 sm:px-6 lg:px-8 text-stone-950 shadow-sm"
+          className="relative z-20 flex min-h-10 items-start border-0 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 py-2 pl-3 pr-11 text-stone-950 sm:items-center sm:px-6 lg:px-8"
           role="region"
         >
-          <div className="mx-auto flex flex-1 max-w-7xl items-center justify-center gap-2 sm:gap-3 text-xs">
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-stone-950 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-amber-300 shadow-xs">
-              <Megaphone className="size-3 animate-pulse" aria-hidden="true" />
-              {activeAnnouncement.isUrgent ? "URGENT" : "ANNOUNCEMENT"}
-            </span>
-
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-center">
-              <span className="font-extrabold tracking-tight text-stone-950 text-xs sm:text-[13px]">
-                {activeAnnouncement.title}
+          <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-2 md:flex-row md:gap-6">
+            
+            {/* Live Indicator & Text Content */}
+            <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
+              <span className="flex min-w-0 items-start gap-2">
+                {/* Animated Blue Circle */}
+                <span className="relative mt-0.5 flex size-2.5 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex size-2.5 rounded-full bg-primary-hover"></span>
+                </span>
+                
+                <span className="min-w-0 break-words font-bold tracking-tight text-stone-950 text-xs sm:text-sm">
+                  {activeAnnouncement.title}
+                </span>
               </span>
+              
               {activeAnnouncement.description && (
-                <span className="hidden lg:inline text-stone-900/80 text-xs font-medium max-w-md truncate">
-                  — {activeAnnouncement.description}
+                <span className="hidden md:inline text-stone-800 text-xs font-medium max-w-lg truncate">
+                  <span className="mx-2 text-stone-950/40">—</span>
+                  {activeAnnouncement.description}
                 </span>
               )}
             </div>
 
-            <Link
-              className="inline-flex shrink-0 whitespace-nowrap items-center gap-1 rounded-full bg-stone-950/15 hover:bg-stone-950 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-stone-950 hover:text-amber-300 transition-colors shadow-2xs"
-              href={activeAnnouncement.href}
-            >
-              <span>{activeAnnouncement.ctaLabel}</span>
-              <ArrowRight className="size-3" aria-hidden="true" />
-            </Link>
+            {/* CTA Link */}
+            {activeAnnouncement.href && (
+              <Link
+                className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-stone-950/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-stone-950 transition-all hover:bg-stone-950 hover:text-white"
+                href={activeAnnouncement.href}
+              >
+                <span>{activeAnnouncement.ctaLabel}</span>
+                <ArrowRight className="size-3" aria-hidden="true" />
+              </Link>
+            )}
           </div>
 
           <button
             aria-label="Dismiss announcement"
-            className="flex size-7 shrink-0 items-center justify-center rounded-full text-stone-950/70 transition hover:bg-stone-950/15 hover:text-stone-950 ml-2"
+            className="absolute right-2 top-1/2 flex size-7 shrink-0 -translate-y-1/2 items-center justify-center rounded-full text-stone-700 transition hover:bg-stone-950/10 hover:text-stone-950 sm:right-3"
             onClick={() => setBannerVisible(false)}
             type="button"
           >
-            <X className="size-3.5" />
+            <X className="size-4" />
           </button>
         </aside>
       )}
 
-      {/* ── 2. Main Navigation Bar with Logo, Nav Links & Re-arranged Actions ── */}
-      <div className="mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-10">
+      {/* ── 2. Main Navigation Bar ── */}
+      <div className="mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between px-2 sm:px-6 lg:px-8">
+        
         {/* Brand / Logo */}
         <Link
           aria-label={`${churchName} home`}
-          className="flex items-center gap-3.5 transition-opacity hover:opacity-90 shrink-0"
+          className="group flex min-w-0 flex-1 items-center gap-3 transition-opacity hover:opacity-90 md:flex-none"
           href="/"
         >
-          <span className="flex size-11 sm:size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-stone-900/10">
+          <span className="flex size-10 sm:size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-stone-900/10 group-hover:shadow-md transition-shadow">
             <ChurchLogo
               alt={logoAlt || churchName}
-              className="size-10 object-contain sm:size-11"
+              className="size-9 sm:size-10 object-contain"
               priority
             />
           </span>
-          <span className="min-w-0">
+          <span className="min-w-0 flex flex-col justify-center">
             <span
-              className={`block max-w-[12rem] sm:max-w-[16rem] font-display text-[0.85rem] sm:text-[0.98rem] font-extrabold uppercase leading-tight tracking-wide ${
-                scrolled || !isHeroPage ? "text-primary" : "text-white"
+              className={`block max-w-[10rem] sm:max-w-[16rem] font-display text-sm sm:text-base font-extrabold tracking-tight truncate transition-colors ${
+                scrolled || !isHeroPage ? "text-stone-950" : "text-white"
               }`}
             >
               {churchName}
             </span>
-            <span
-              className={`mt-0.5 block text-[0.58rem] sm:text-[0.62rem] font-bold uppercase tracking-[0.16em] ${
-                scrolled || !isHeroPage ? "text-muted" : "text-white/80"
-              }`}
-            >
-              {headerSettings.brandTagline}
-            </span>
+            {headerSettings.brandTagline && (
+              <span
+                className={`mt-0.5 block text-[10px] sm:text-xs font-medium uppercase tracking-wider truncate transition-colors ${
+                  scrolled || !isHeroPage ? "text-stone-500" : "text-white/70"
+                }`}
+              >
+                {headerSettings.brandTagline}
+              </span>
+            )}
           </span>
         </Link>
 
         {/* Desktop Nav Links */}
-        <nav aria-label="Main navigation" className="hidden items-center gap-0.5 lg:flex xl:gap-1 shrink min-w-0">
+        <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex lg:gap-2 shrink min-w-0">
           {configuredNavigation.map((link) => {
             const active = isCurrentPage(pathname, link.href);
             return (
               <Link
                 aria-current={active ? "page" : undefined}
-                className={`whitespace-nowrap rounded-lg px-2 lg:px-2.5 xl:px-3 py-2 text-[0.72rem] lg:text-[0.75rem] xl:text-[0.78rem] font-bold uppercase tracking-[0.06em] xl:tracking-[0.08em] transition-colors ${
+                className={`relative whitespace-nowrap rounded-md px-3 py-2 text-xs lg:text-sm font-semibold tracking-wide transition-colors duration-200 ${
                   active ? navActiveColor : `${navTextColor} ${navHoverColor}`
                 }`}
                 href={link.href}
@@ -242,15 +260,15 @@ export function HeaderView({
           })}
         </nav>
 
-        {/* Desktop Primary CTA Button */}
+        {/* Desktop Primary CTA Button - Blue Accent */}
         {headerSettings.primaryCta.visible && (
-          <div className="hidden shrink-0 items-center lg:flex">
+          <div className="hidden shrink-0 items-center md:flex ml-4">
             <Link
-              className="flex shrink-0 whitespace-nowrap min-h-11 items-center gap-2 rounded-full bg-secondary px-5 xl:px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-stone-950 shadow-md transition-all hover:bg-secondary/90 hover:shadow-lg hover:-translate-y-0.5"
+              className="flex shrink-0 whitespace-nowrap items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all hover:bg-primary-hover hover:shadow-md hover:-translate-y-0.5"
               href={headerSettings.primaryCta.href}
             >
-              <span className="whitespace-nowrap">{headerSettings.primaryCta.label}</span>
-              <ArrowRight className="size-3.5 shrink-0" aria-hidden="true" />
+              <span>{headerSettings.primaryCta.label}</span>
+              <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
             </Link>
           </div>
         )}
@@ -259,8 +277,12 @@ export function HeaderView({
         <button
           aria-controls="mobile-navigation"
           aria-expanded={mobileMenuOpen}
-          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-          className="flex min-h-11 items-center gap-2 rounded-xl bg-primary px-3.5 py-2 text-white shadow-sm transition hover:bg-primary-hover lg:hidden"
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          className={`ml-2 flex size-11 shrink-0 items-center justify-center rounded-xl p-0 shadow-sm transition-all md:hidden ${
+            scrolled || !isHeroPage 
+              ? "bg-white border border-stone-200 text-stone-900 hover:bg-stone-50" 
+              : "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20"
+          }`}
           onClick={() => setMobileMenuOpen((open) => !open)}
           ref={menuButtonRef}
           type="button"
@@ -270,15 +292,12 @@ export function HeaderView({
           ) : (
             <Menu className="size-5" aria-hidden="true" />
           )}
-          <span className="text-xs font-bold uppercase tracking-wider">
-            {mobileMenuOpen ? "Close" : "Menu"}
-          </span>
         </button>
       </div>
 
       {/* ── 3. Full-screen Mobile Navigation Drawer ── */}
       {mobileMenuOpen && mounted && createPortal(
-        <div className="fixed inset-0 z-[100] bg-stone-950/60 backdrop-blur-sm lg:hidden">
+        <div className="fixed inset-0 z-[100] bg-stone-950/40 backdrop-blur-sm md:hidden transition-opacity">
           <button
             aria-label="Close navigation menu"
             className="absolute inset-0 size-full cursor-default"
@@ -289,7 +308,7 @@ export function HeaderView({
           <div
             aria-labelledby="mobile-navigation-title"
             aria-modal="true"
-            className="absolute inset-y-0 right-0 flex max-h-dvh w-[min(90vw,24rem)] flex-col overflow-y-auto overscroll-contain bg-white px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl"
+            className="absolute inset-y-0 right-0 flex max-h-dvh w-[min(85vw,22rem)] flex-col overflow-y-auto overscroll-contain bg-white px-6 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl animate-in slide-in-from-right duration-300"
             id="mobile-navigation"
             ref={mobileNavigationRef}
             role="dialog"
@@ -299,83 +318,83 @@ export function HeaderView({
             </h2>
 
             {/* Drawer Header */}
-            <div className="flex items-center justify-between border-b border-stone-200 pb-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-5">
               <Link
                 aria-label={`${churchName} home`}
                 className="flex items-center gap-3 text-stone-900"
                 href="/"
                 onClick={closeMobileMenu}
               >
-                <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-xs">
+                <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-1 ring-stone-900/5">
                   <ChurchLogo className="size-8 object-contain" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate font-display text-xs font-extrabold uppercase leading-tight tracking-wide text-primary">
+                  <span className="block truncate font-display text-sm font-bold tracking-tight text-stone-950">
                     {churchName}
-                  </span>
-                  <span className="block text-[0.6rem] font-bold uppercase tracking-[0.14em] text-muted">
-                    {headerSettings.brandTagline}
                   </span>
                 </span>
               </Link>
               <button
                 aria-label="Close navigation menu"
-                className="flex size-10 items-center justify-center rounded-xl border border-stone-200 text-stone-700 hover:bg-stone-100"
+                className="flex size-9 items-center justify-center rounded-full bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"
                 onClick={closeMobileMenu}
                 ref={closeButtonRef}
                 type="button"
               >
-                <X className="size-5" aria-hidden="true" />
+                <X className="size-4" aria-hidden="true" />
               </button>
             </div>
 
-            {/* Quick Action Grid */}
-            <div className="mt-4 grid grid-cols-2 gap-2 border-b border-stone-200 pb-4">
+            {/* Quick Action Grid - Updated to Blue Accents */}
+            <div className="mt-6 grid grid-cols-2 gap-3 border-b border-stone-100 pb-6">
               {headerSettings.primaryCta.visible && (
                 <Link
                   href={headerSettings.primaryCta.href}
                   onClick={closeMobileMenu}
-                  className="col-span-2 flex min-h-12 items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wider text-stone-950 shadow-xs whitespace-nowrap"
+                  className="col-span-2 flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold tracking-wide text-white shadow-sm transition-colors hover:bg-primary-hover"
                 >
                   <Compass className="size-4 shrink-0" />
-                  <span className="whitespace-nowrap">{headerSettings.primaryCta.label}</span>
+                  <span>{headerSettings.primaryCta.label}</span>
                 </Link>
               )}
               <Link
                 href="/prayer-request"
                 onClick={closeMobileMenu}
-                className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-stone-100 px-3 py-2 text-center text-xs font-bold uppercase tracking-wider text-primary hover:bg-stone-200"
+                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary/6 px-3 text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"
               >
-                <Heart className="size-3.5 text-primary" />
+                <Heart className="size-4 text-primary" />
                 <span>Prayer</span>
               </Link>
               {phone && (
                 <a
                   href={`tel:${phone}`}
-                  className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 py-2 text-center text-xs font-semibold text-stone-700 hover:bg-stone-50"
+                  className="flex h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold text-stone-700 hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors"
                 >
-                  <Phone className="size-3.5 text-primary" />
-                  <span>Call Church</span>
+                  <Phone className="size-4 text-primary" />
+                  <span>Call</span>
                 </a>
               )}
               <Link
                 href={headerSettings.directionsHref}
                 onClick={closeMobileMenu}
-                className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 py-2 text-center text-xs font-semibold text-stone-700 hover:bg-stone-50"
+                className="col-span-2 flex h-11 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold text-stone-700 hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-colors"
               >
-                <MapPin className="size-3.5 text-primary" />
+                <MapPin className="size-4 text-primary" />
                 <span>{headerSettings.directionsLabel}</span>
               </Link>
             </div>
 
-            <nav aria-label="Mobile navigation links" className="mt-4 space-y-1">
+            {/* Nav Links */}
+            <nav aria-label="Mobile navigation links" className="mt-6 space-y-1">
               {configuredNavigation.map((link) => {
                 const active = isCurrentPage(pathname, link.href);
                 return (
                   <Link
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-12 items-center rounded-xl px-4 text-xs font-bold uppercase tracking-wider ${
-                      active ? "bg-primary/10 text-primary" : "text-stone-700 hover:bg-stone-50 hover:text-primary"
+                    className={`flex h-12 items-center rounded-xl px-4 text-sm font-semibold tracking-wide transition-colors ${
+                      active 
+                        ? "bg-primary/6 text-primary" 
+                        : "text-stone-600 hover:bg-stone-50 hover:text-primary"
                     }`}
                     href={link.href}
                     key={`${link.href}-${link.order}`}
@@ -388,21 +407,21 @@ export function HeaderView({
             </nav>
 
             {/* Drawer Footer with Service Times & Contact */}
-            <div className="mt-auto border-t border-stone-200 pt-5 space-y-2">
-              <div className="rounded-xl bg-stone-50 p-3.5 border border-stone-200/70 text-xs text-stone-600">
-                <p className="font-bold text-stone-900 flex items-center gap-1.5">
-                  <Clock3 className="size-3.5 text-primary" />
+            <div className="mt-auto border-t border-stone-100 pt-6">
+              <div className="rounded-2xl bg-stone-50 p-4 text-sm text-stone-600 border border-stone-100">
+                <p className="font-semibold text-stone-900 flex items-center gap-2">
+                  <Clock3 className="size-4 text-primary" />
                   {headerSettings.serviceSummary}
                 </p>
                 {location && (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-stone-600">
-                    <MapPin className="size-3.5 text-primary" />
-                    <span>{location}</span>
+                  <p className="mt-3 flex items-start gap-2 text-stone-600">
+                    <MapPin className="size-4 text-stone-400 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{location}</span>
                   </p>
                 )}
                 {email && (
-                  <p className="mt-1 flex items-center gap-1.5 text-stone-600">
-                    <Mail className="size-3.5 text-primary" />
+                  <p className="mt-3 flex items-center gap-2 text-stone-600">
+                    <Mail className="size-4 text-stone-400 shrink-0" />
                     <a className="hover:text-primary transition-colors truncate" href={`mailto:${email}`}>
                       {email}
                     </a>

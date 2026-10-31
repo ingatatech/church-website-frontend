@@ -19,9 +19,10 @@ import {
   Sparkles,
   Users,
   Volume2,
+  type LucideIcon,
 } from "lucide-react";
-import { FlipCard } from "@/components/ui/flip-card";
 import { ServiceUnavailable } from "@/components/feedback/service-unavailable";
+import { InteractiveLocationMap } from "@/components/media/interactive-location-map";
 import { ArrangedAudienceStrip } from "@/components/site/arranged-audience-strip";
 import { ArrangedServicesFilter } from "@/components/site/arranged-services-filter";
 import { getSiteUrl } from "@/lib/site-url";
@@ -44,7 +45,6 @@ import {
   formatServiceTime,
   sortServices,
   toChurchService,
-  type ChurchService,
 } from "@/lib/content/services";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +52,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   await connection();
   const settings = await getPublicWebsiteSettings().catch(() => null);
-  const churchName = settings?.churchName || "Seventh-day Adventist Fellowship";
+  const churchName = settings?.churchName || "Church";
   const title = `${churchName} | Faith, Worship & Community`;
   const description =
     settings?.churchDescription ||
@@ -83,7 +83,6 @@ type Testimonial = PublicContent;
 type Leader = PublicContent;
 type GalleryImage = { src: string; alt: string; label: string; href: string };
 
-const heroFallback = "https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=2200&q=85";
 const container = "mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10";
 
 function text(value: unknown) {
@@ -133,6 +132,33 @@ function LinkArrow({ children, href }: { children: string; href: string }) {
   );
 }
 
+function HomepageEmptyState({
+  icon: Icon,
+  title,
+  description,
+  ctaLabel,
+  href,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  ctaLabel: string;
+  href: string;
+}) {
+  return (
+    <div className="col-span-full rounded-2xl border border-dashed border-stone-300 bg-white/80 px-6 py-9 text-center shadow-xs sm:px-10">
+      <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
+        <Icon aria-hidden="true" className="size-5" />
+      </span>
+      <h3 className="mt-4 font-display text-xl font-bold text-stone-900">{title}</h3>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted">{description}</p>
+      <Link className="button button-secondary mt-5 min-h-11 px-5 text-xs font-bold uppercase tracking-wider" href={href}>
+        {ctaLabel}<ArrowRight aria-hidden="true" className="size-4" />
+      </Link>
+    </div>
+  );
+}
+
 /* ── Fallback datasets matching SRS Section 12, 19, 27, 30, 34 ── */
 export default async function HomeView() {
   await connection();
@@ -162,7 +188,7 @@ export default async function HomeView() {
 
   const homepage = websiteSettings?.homepage ?? defaultHomepageSettings;
   const church = websiteSettings?.church ?? defaultChurchInformation;
-  const churchName = websiteSettings?.churchName || "Seventh-day Adventist Fellowship";
+  const churchName = websiteSettings?.churchName || "Church";
   const churchDescription = websiteSettings?.churchDescription || "";
   const events = eventResponse ?? [];
   const sermons = sermonResponse ?? [];
@@ -273,14 +299,16 @@ export default async function HomeView() {
       {/* ── 2. HERO SECTION (SRS Section 9 #2 & Section 11) ───────────────── */}
       {hero.visible && (
         <section className="relative isolate flex min-h-[680px] items-center overflow-hidden bg-primary-dark text-white sm:min-h-[760px] lg:min-h-[840px]">
-          <Image
-            alt={hero.imageAlt || `${churchName} worship gathering`}
-            className="object-cover"
-            fill
-            priority
-            sizes="100vw"
-            src={hero.imageUrl || heroFallback}
-          />
+          {hero.imageUrl && (
+            <Image
+              alt={hero.imageAlt || "Church gathering"}
+              className="object-cover"
+              fill
+              priority
+              sizes="100vw"
+              src={hero.imageUrl}
+            />
+          )}
           <div aria-hidden="true" className="home-hero-overlay absolute inset-0" />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-primary-dark/95 via-transparent to-primary-dark/40" />
 
@@ -320,18 +348,12 @@ export default async function HomeView() {
                 </Link>
               </div>
 
-              {/* Frosted Glass Gathering Preview Bar */}
-              <div className="glass-pill mt-12 flex flex-wrap items-center gap-6 rounded-2xl p-4 sm:p-5 text-xs text-white/90 shadow-lg">
-                <span className="flex items-center gap-2.5 font-medium">
-                  <Clock3 aria-hidden="true" className="size-4 text-secondary shrink-0" />
-                  <span>Sabbath Worship: <strong className="text-white font-bold">{publicServices[0] ? `${formatServiceDate(publicServices[0])} · ${formatServiceTime(publicServices[0])}` : "Saturdays 9:00 AM"}</strong></span>
-                </span>
-                <span className="hidden sm:inline text-white/30">•</span>
-                <span className="flex items-center gap-2.5 font-medium">
-                  <MapPin aria-hidden="true" className="size-4 text-secondary shrink-0" />
-                  <span className="truncate max-w-xs">{[church.contact.address, location].filter(Boolean).join(", ") || "Sanctuary, Kigali"}</span>
-                </span>
-              </div>
+              {(publicServices[0] || church.contact.address || location) && (
+                <div className="glass-pill mt-12 flex flex-wrap items-center gap-6 rounded-2xl p-4 text-xs text-white/90 shadow-lg sm:p-5">
+                  {publicServices[0] && <span className="flex items-center gap-2.5 font-medium"><Clock3 aria-hidden="true" className="size-4 shrink-0 text-secondary" /><span>{publicServices[0].title}: <strong className="font-bold text-white">{formatServiceDate(publicServices[0])} · {formatServiceTime(publicServices[0])}</strong></span></span>}
+                  {(church.contact.address || location) && <span className="flex items-center gap-2.5 font-medium"><MapPin aria-hidden="true" className="size-4 shrink-0 text-secondary" /><span className="truncate">{[church.contact.address, location].filter(Boolean).join(", ")}</span></span>}
+                </div>
+              )}
             </div>
 
             <a
@@ -717,6 +739,13 @@ export default async function HomeView() {
                       </div>
                     </article>
                   ))}
+                  {chosenMinistries.length === 0 && <HomepageEmptyState
+                    icon={Users}
+                    title={config.emptyStateTitle || "Find your place to grow"}
+                    description={config.emptyStateDescription || "Our ministry teams are getting their pages ready. Contact us and we’ll help you find a way to connect and serve."}
+                    ctaLabel={config.emptyStateCtaLabel || "Talk with our team"}
+                    href={config.emptyStateCtaHref || "/contact"}
+                  />}
                 </div>
               </div>
             </section>
@@ -825,11 +854,13 @@ export default async function HomeView() {
                       </article>
                     );
                   })}
-                  {publicEvents.length === 0 && (
-                    <p className="rounded-xl border border-border bg-white p-6 text-sm leading-6 text-muted md:col-span-2 lg:col-span-3">
-                      No upcoming events are listed right now. Visit the <Link className="font-semibold text-primary hover:underline" href="/events">events page</Link> for updates.
-                    </p>
-                  )}
+                  {publicEvents.length === 0 && <HomepageEmptyState
+                    icon={CalendarDays}
+                    title={config.emptyStateTitle || "Gather with us soon"}
+                    description={config.emptyStateDescription || "There are no upcoming events listed right now. Check back soon or visit the events calendar for updates."}
+                    ctaLabel={config.emptyStateCtaLabel || "View events calendar"}
+                    href={config.emptyStateCtaHref || "/events"}
+                  />}
                 </div>
               </div>
             </section>
@@ -925,11 +956,13 @@ export default async function HomeView() {
                       </div>
                     </article>
                   ))}
-                  {publicSermons.length === 0 && (
-                    <p className="rounded-xl border border-border bg-white p-6 text-sm leading-6 text-muted sm:col-span-2 lg:col-span-3">
-                      No sermons are available yet. Browse the <Link className="font-semibold text-primary hover:underline" href="/sermons">sermon library</Link> for messages as they are published.
-                    </p>
-                  )}
+                  {publicSermons.length === 0 && <HomepageEmptyState
+                    icon={BookOpen}
+                    title={config.emptyStateTitle || "A message for the week is on its way"}
+                    description={config.emptyStateDescription || "No sermons are published here yet. Visit the sermon library to explore messages as they become available."}
+                    ctaLabel={config.emptyStateCtaLabel || "Explore the sermon library"}
+                    href={config.emptyStateCtaHref || "/sermons"}
+                  />}
                 </div>
               </div>
             </section>
@@ -984,11 +1017,13 @@ export default async function HomeView() {
                       </article>
                     );
                   })}
-                  {publicAnnouncements.length === 0 && (
-                    <p className="rounded-xl border border-border bg-white p-6 text-sm leading-6 text-muted">
-                      There are no new announcements right now. Check the <Link className="font-semibold text-primary hover:underline" href="/announcements">announcements page</Link> for updates.
-                    </p>
-                  )}
+                  {publicAnnouncements.length === 0 && <HomepageEmptyState
+                    icon={Sparkles}
+                    title={config.emptyStateTitle || "A quiet week at church"}
+                    description={config.emptyStateDescription || "There are no new announcements right now. Visit the announcements page for the latest church updates."}
+                    ctaLabel={config.emptyStateCtaLabel || "See all announcements"}
+                    href={config.emptyStateCtaHref || "/announcements"}
+                  />}
                 </div>
               </div>
             </section>
@@ -1004,7 +1039,7 @@ export default async function HomeView() {
                 <SectionHeading
                   eyebrow={config.eyebrow || "Community Stories"}
                   title={config.heading || "Faith Lived & Shared"}
-                  description={config.description || "Real testimonies of God's love and restoration from members of our faith family."}
+                  description={config.description || "Testimonials approved for public display appear here."}
                 />
                 <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {publicTestimonials.map((item) => (
@@ -1086,16 +1121,16 @@ export default async function HomeView() {
                   <div aria-hidden="true" className="pointer-events-none absolute -bottom-20 -left-10 size-80 rounded-full bg-secondary/10 blur-3xl" />
                   <div className="relative z-10 max-w-2xl">
                     <p className="eyebrow text-secondary uppercase tracking-widest text-xs font-bold">
-                      {config.eyebrow || "Pastoral Care & Intercession"}
+                      {config.eyebrow || "Prayer & Support"}
                     </p>
                     <h2 className="mt-3 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
-                      {config.prayerHeading || "Need Prayer? We Are Here For You."}
+                      {config.prayerHeading || "Send a prayer request"}
                     </h2>
                     <p className="mt-4 text-base leading-relaxed text-white/85 sm:text-lg">
                       “{config.prayerQuote || "Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. (Philippians 4:6)"}”
                     </p>
                     <p className="mt-2 text-sm text-white/70">
-                      {config.prayerAssurance || "Our pastoral prayer team prays over every request received. All submissions are held in strict confidence and handled with heartfelt care."}
+                      {config.prayerAssurance || "Prayer requests are available to administrators authorized to manage them."}
                     </p>
 
                     <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -1109,7 +1144,7 @@ export default async function HomeView() {
                         className="button border-2 border-white/40 bg-white/10 min-h-12 px-6 font-bold uppercase tracking-wider text-xs text-white hover:bg-white/20"
                         href={config.secondaryCtaHref || "/contact"}
                       >
-                        {config.secondaryCtaLabel || "Contact Pastoral Care"}
+                        {config.secondaryCtaLabel || "Contact the church"}
                       </Link>
                     </div>
                   </div>
@@ -1121,10 +1156,10 @@ export default async function HomeView() {
                   <div className="p-8 sm:p-12 lg:p-14">
                     <p className="eyebrow text-primary uppercase tracking-widest text-xs font-bold">{config.visitLabel || "Visit Our Church"}</p>
                     <h3 className="mt-3 font-display text-3xl font-bold text-text sm:text-4xl">
-                      {config.heading || "Join Us for Sabbath Worship"}
+                      {config.heading || "Connect with the church"}
                     </h3>
                     <p className="mt-3 text-sm leading-relaxed text-muted">
-                      {config.description || "We welcome you to worship, study the Bible, and share fellowship with our community."}
+                      {config.description || "Review published service information and contact the church with any questions."}
                     </p>
 
                     <div className="mt-8 space-y-5 text-sm">
@@ -1132,7 +1167,7 @@ export default async function HomeView() {
                         <MapPin aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" />
                         <div>
                             <strong className="block text-stone-900">{config.addressLabel || "Physical Address"}</strong>
-                          <span className="text-muted">{[church.contact.address, location].filter(Boolean).join(", ") || "Contact the congregation to confirm the location"}</span>
+                          <span className="text-muted">{[church.contact.address, location].filter(Boolean).join(", ") || "Location information has not been published yet."}</span>
                         </div>
                       </div>
 
@@ -1144,7 +1179,7 @@ export default async function HomeView() {
                             <span className="block text-muted" key={service.id}>
                               {formatServiceDate(service)}: {formatServiceTime(service)}
                             </span>
-                          )) : <span className="text-muted">Contact the congregation to confirm gathering times.</span>}
+                          )) : <span className="text-muted">Service times have not been published yet.</span>}
                         </div>
                       </div>
 
@@ -1210,10 +1245,9 @@ export default async function HomeView() {
                   {/* Right Map Column */}
                   <div className="relative min-h-[360px] bg-stone-200 lg:min-h-full">
                     {church.contact.mapUrl ? (
-                      <iframe
-                        className="size-full border-0"
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
+                      <InteractiveLocationMap
+                        className="h-full min-h-[360px] w-full rounded-none lg:min-h-full"
+                        location={[church.contact.address, location].filter(Boolean).join(", ")}
                         src={church.contact.mapUrl}
                         title={`Location map of ${churchName}`}
                       />
